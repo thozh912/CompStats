@@ -1,0 +1,5 @@
+library(XLConnect)
+wb = loadWorkbook("tecator.xls")
+data = readWorksheet(wb,sheet = "data" ,header = TRUE)
+extrafat = readWorksheet(wb,sheet = "extrapolation_fat" ,header = TRUE)
+extraprotein = readWorksheet(wb,sheet = "extrapolation_protein" ,header = TRUE)
