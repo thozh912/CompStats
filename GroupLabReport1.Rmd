@@ -1,5 +1,5 @@
 ---
-title: "COMPUTER LAB 1 Group report"
+title: "Computer Lab 1 Group report"
 author: "Andrea Bruzzone,Thomas Zhang"
 date: "2016 M02 3"
 output: pdf_document
@@ -133,6 +133,9 @@ solveres
 
 The condition number is smaller now and we are lucky that it works now. Generally we should probably decompose the matrix `A` using QR or SVD or Cholesky decomposition/factorization.
 
+
+## Contributions
+Both Group memebers contributed with their code and their ideas. Andrea contributed the code for assignment 1 and 3 and Thomas contributed the code for the other two assignments. We also discussed together what the condition number means and how floating-point arithmetic works.
 ##Appendix
 
 ###R code
