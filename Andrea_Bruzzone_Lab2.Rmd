@@ -1,0 +1,296 @@
+---
+title: "Lab2 report"
+author: "Andrea Bruzzone"
+output: pdf_document
+---
+
+##Assignment 1
+##1.1
+File mortality_rate contains informtions about mortality rates of the fruit flies.
+We add one more variable, LMR, to the data, which is logarithm of variable Rate. LMR will be our 
+response Y while Day is the predictor. Then, the data is devided using this code:
+
+```{r, eval=FALSE}
+n=dim(mortality)[1]
+set.seed(123456)
+id=sample(1:n, floor(n*0.5))
+train=mortality[id,]
+test=mortality[-id,]
+```
+
+##1.2 and 1.3
+We write a function myMSE that takes parameters lambda and pars, which is a list containing X, Y, Xtest and Ytest. In the function we fit a LOESS model using function loess() to predict Y with the predictor X. The function returns and prints the predective MSE. Lambda is the penalty and takes values as: lambda = 0.1, 0.2, ..., 40
+
+This is how the function looks like:
+```{r, eval=FALSE}
+myMSE <- function(lambda, pars){
+  X <- as.matrix(pars$X)
+  Y <- as.matrix(pars$Y)
+  Xtest <- as.matrix(pars$Xtest)
+  Ytest <- as.matrix(pars$Ytest)
+  MSE <- c()
+  for(i in 1:(length(lambda))){
+  lo <- loess(Y ~ X, enp.target = lambda[i]) 
+  pred <- predict(lo, Xtest)
+  MSE[i] <- (sum((pred - Ytest)^2) )/length(Ytest)
+  }
+  print(MSE)
+  return(MSE)
+}
+```
+
+
+The value of MSE returned are:
+
+```{r, echo=FALSE}
+mortality <- read.csv2("mortality_rate.csv")
+
+#1.1
+mortality$LMR <- log(mortality$Rate)
+
+n=dim(mortality)[1]
+set.seed(123456)
+id=sample(1:n, floor(n*0.5))
+train=mortality[id,]
+test=mortality[-id,]
+
+#1.2 and 1.3
+tr <- train[,1]
+trY <- train[,3]
+tes <- test[,1]
+tesY <- test[,3]
+li <- list(X = tr, Y = trY, Xtest = tes, Ytest = tesY)
+
+lambda <- seq(0.1, 40, 0.1)
+
+myMSE <- function(lambda, pars){
+  X <- as.matrix(pars$X)
+  Y <- as.matrix(pars$Y)
+  Xtest <- as.matrix(pars$Xtest)
+  Ytest <- as.matrix(pars$Ytest)
+  MSE <- c()
+  for(i in 1:(length(lambda))){
+  lo <- loess(Y ~ X, enp.target = lambda[i]) 
+  pred <- predict(lo, Xtest)
+  MSE[i] <- (sum((pred - Ytest)^2) )/length(Ytest)
+  }
+  print(MSE)
+  return(MSE)
+}
+
+res <- myMSE(lambda, li)
+
+
+```
+
+The following plot shows the values of MSE versus Lambda:
+
+```{r, echo=FALSE}
+plot(lambda, res, ylab = "MSE", xlab = "Lambda")
+```
+
+From the plot it can be seen that the minimum MSE is around a Lambda value of 10. In particular the optimal value of Lambda is:
+```{r, echo=FALSE}
+lambda[which.min(res)]
+```
+
+This value of Lambda corresponds to a MSE of 0.131047 and 117 evaluations of myMSE are required in order to find this minimum value.
+
+##1.4
+In order to find the minimum, this time we use the function optimize() with accuracy equal to 0.01 and interval for the search (0.1, 40).
+
+```{r, echo=FALSE}
+op <- optimize(myMSE, c(0.1, 40), tol = 0.01, pars = li)
+op
+```
+
+It returns a optimal value of lambda equal to 10.7 with a MSE of 0.1321441 and 18 as number of evaluations. So this function goes really close to the minumum but it does not reach it.
+
+##1.5
+With the same purpose, we use the optim function, with a starting point for Lambda equal to 35 
+and using the Quasi-Newton method.
+
+```{r, echo=FALSE}
+op2 <- optim(35, fn = myMSE, method = "BFGS", pars = li) #using Quasi-Newton method
+op2
+```
+
+This function stops just after 3 evaluations and returns a Lambda of 35 with MSE value of 0.1719996. It is clear that it does not reach the minimum and it is worst than the optimize function.
+
+From the first plot we can see that going from a value of Lambda equal to 35 to a value of 30, the MSE is always the same, so the Quasi-Newton method can not converge to an optimal solution.
+
+##Assignment 2
+```{r, echo=FALSE}
+load("data.RData")
+```
+#2.1
+The file data contains a sample from a normal distribution.
+
+#2.2
+The likelihood function for 100 observations is:
+
+$$L(\mu, \sigma^2, x_1, ..., x_{100}) = (2\pi\sigma^2)^{-50} exp(-\frac{1}{2\sigma^2} \sum_{j = 1}^{100} (x_j - \mu)^2)$$
+
+The log likelihood is:
+
+$$l(\mu, \sigma^2, x_1, ..., x_{100}) = - \frac{100}{2}ln(2\pi) - \frac{100}{2}ln(\sigma^2) - \frac{1}{2\sigma^2}\sum_{j = 1}^{100} (x_j - \mu)^2)$$
+ 
+And the maximum likelihood estimators for $\mu$ and $\sigma$ are:
+
+$$\hat{\mu} = \frac{1}{100}\sum_{j = 1}^{100} x_j$$
+
+$$\hat{\sigma} = \sqrt{\frac{1}{100}\sum_{j = 1}^{100} (x_j - \hat{\mu})^2}$$
+
+with values respectively equal to:
+
+```{r, echo=FALSE}
+muhat <- sum(data)/100
+muhat
+sigmasquarehat <- sum((data - muhat)^2) / 100
+sigmahat <- sqrt(sigmasquarehat)
+sigmahat
+```
+
+#2.3
+The log-likelihood often has a much simpler form than the likelihood and is usually easier to differentiate.
+
+#2.4
+We optimize the minus log-likelihood function with initial values $\mu = 0$ and $\sigma = 1$.
+
+First using Quasi-Newton method without gradient specified:
+
+```{r, echo=FALSE}
+minusloglike <- function(pars){
+  mu <- pars[1]
+  sig <- pars[2]
+  loglike <- - (-50*log(2*pi) - 50*log(sig^2) - 1/(2*sig^2)*sum((data- mu)^2))
+  return(loglike)
+}
+
+gradient <- function(pars){
+  mu <- pars[1]
+  sig <- pars[2]
+  c(-(1/sig^2*sum(data - mu)), -(-100/sig + 1/sig^3*sum((data- mu)^2)))
+}
+
+
+oplog <- optim(c(0,1), fn = minusloglike, method = "BFGS")
+oplog
+```
+
+Quasi-Newton method with specified gradient:
+
+```{r, echo=FALSE}
+#specified the gradient
+oploggrad <- optim(c(0,1), fn = minusloglike, method = "BFGS", gr = gradient)
+oploggrad
+```
+
+Second, the Conjugate Gradient method without gradient specified:
+
+```{r, echo=FALSE}
+oplog2 <- optim(c(0,1), minusloglike, method = "CG")
+oplog2
+```
+
+Conjugate Gradient method with gradient specified:
+```{r, echo=FALSE}
+#specified the gradient
+oplog2grad <- optim(c(0,1), minusloglike, method = "CG", gr = gradient)
+oplog2grad
+```
+
+#2.5
+All the algorithms converge. For BFGS we have no difference with gradient or not, neither in the values, that are the same as in the maximum likelihood estimators, and in the number of iterations. For CG we have same values in both the two ways, and they are the same as in the maximum likelihood estimators, but less number of iterations with the gradient specified than without gradient specified.
+
+
+##Code
+```{r, eval=FALSE}
+#Assignment 1
+mortality <- read.csv2("mortality_rate.csv")
+
+#1.1
+mortality$LMR <- log(mortality$Rate)
+
+n=dim(mortality)[1]
+set.seed(123456)
+id=sample(1:n, floor(n*0.5))
+train=mortality[id,]
+test=mortality[-id,]
+
+#1.2 and 1.3
+tr <- train[,1]
+trY <- train[,3]
+tes <- test[,1]
+tesY <- test[,3]
+li <- list(X = tr, Y = trY, Xtest = tes, Ytest = tesY)
+
+lambda <- seq(0.1, 40, 0.1)
+
+myMSE <- function(lambda, pars){
+  X <- as.matrix(pars$X)
+  Y <- as.matrix(pars$Y)
+  Xtest <- as.matrix(pars$Xtest)
+  Ytest <- as.matrix(pars$Ytest)
+  MSE <- c()
+  for(i in 1:(length(lambda))){
+  lo <- loess(Y ~ X, enp.target = lambda[i]) 
+  pred <- predict(lo, Xtest)
+  MSE[i] <- (sum((pred - Ytest)^2) )/length(Ytest)
+  }
+  print(MSE)
+  return(MSE)
+}
+
+res <- myMSE(lambda, li)
+
+plot(lambda, res, ylab = "MSE", xlab = "Lambda")
+
+min(res) #minimum MSE
+which(res == (min(res))) #number of evaluation to find the optimal value
+lambda[117]  #optimal value of lambda
+
+#1.4
+op <- optimize(myMSE, c(0.1, 40), tol = 0.01, pars = li)
+op
+# 18 number of evaluations
+
+#1.5
+op2 <- optim(35, fn = myMSE, method = "BFGS", pars = li) #using Quasi-Newton method
+op2
+# 3 number of evaluations
+
+##Assignment 2
+muhat <- sum(data)/100
+sigmasquarehat <- sum((data - muhat)^2) / 100
+sigmahat <- sqrt(sigmasquarehat)
+
+#2.4
+minusloglike <- function(pars){
+  mu <- pars[1]
+  sig <- pars[2]
+  loglike <- - (-50*log(2*pi) - 50*log(sig^2) - 1/(2*sig^2)*sum((data- mu)^2))
+  return(loglike)
+}
+
+gradient <- function(pars){
+  mu <- pars[1]
+  sig <- pars[2]
+  c(-(1/sig^2*sum(data - mu)), -(-100/sig + 1/sig^3*sum((data- mu)^2)))
+}
+
+
+oplog <- optim(c(0,1), fn = minusloglike, method = "BFGS")
+oplog
+
+oplog2 <- optim(c(0,1), minusloglike, method = "CG")
+oplog2
+
+#specified the gradient
+oploggrad <- optim(c(0,1), fn = minusloglike, method = "BFGS", gr = gradient)
+oploggrad
+
+oplog2grad <- optim(c(0,1), minusloglike, method = "CG", gr = gradient)
+oplog2grad
+```
+
