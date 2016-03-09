@@ -1,5 +1,5 @@
 ---
-title: "Computer Lab 2"
+title: "Computer Lab 4"
 author: "Thomas Zhang"
 date: "2016 M02 1"
 output: pdf_document
@@ -8,7 +8,7 @@ output: pdf_document
 ## Assignment 1
 
 
-```{r,echo=FALSE}
+```{r,echo=FALSE,message=FALSE,warning=FALSE}
 
 ```
 
