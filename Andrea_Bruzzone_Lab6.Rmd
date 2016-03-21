@@ -1,0 +1,182 @@
+---
+title: "Lab 6 report"
+author: "Andrea Bruzzone"
+output: pdf_document
+---
+
+##Assignment 1
+In this assignment we work with the function:
+$$f(x) = \frac{x^2}{e^x}-2e^{\frac{-9sin(x)}{x^2+x+1}}$$
+and we try to perform one-dimensional maximization using the genetic algorithm.
+
+The functions can be found in the code part of this report.
+
+The plot that shows the results of our function with maxiter 100 and mutprob=0.9 is reported.
+
+```{r, echo=FALSE}
+##1
+#1.1
+set.seed(39)
+
+obj_funct <- function(x){
+  obj <- (x^2/exp(x)) - 2*exp((-9*sin(x)) / (x^2 + x + 1))
+  return(obj)
+}
+
+#1.2
+crossover <- function(x, y){
+  kid <- (x + y) / 2
+  return(kid)
+}
+
+#1.3
+mutate <- function(x){
+  res <- x^2 %% 30
+  return(res)
+}
+
+#1.4
+gen <- function(maxiter, mutprob){
+  somenum <- seq(0, 30, 1)
+  fnum <- obj_funct(somenum)
+  plot(somenum,fnum, xlim = c(0, 30), type = "l", xlab = "X", ylab = "f(x)")
+  
+  m <- c()
+  pop <- seq(0, 30, 5)
+  values <- obj_funct(pop)
+  
+  for(i in 1:maxiter){
+    parents <- sample(pop, 2)
+    ord_values <- order(values)
+    victim <- pop[ord_values[1]]
+    new_kid <- crossover(parents[1], parents[2])
+    u <- runif(1)
+    if(u < mutprob){
+      new_kid_mut <- mutate(new_kid)
+      pop[pop==victim] <- new_kid_mut 
+    }else{
+      pop[pop==victim] <- new_kid
+     }
+    m[i] <- values[ord_values[length(ord_values)]]  
+    #print(m)
+    values <- obj_funct(pop)
+  }
+  points(pop, values, col="red")
+}
+
+
+gen(100, 0.9)
+```
+
+It can be seen that in this case our function is able to find the global maximum of the function, since all the final values are close to the maximum.
+
+\newpage
+
+##Assignment 2
+The dataset `physical.csv` describes a behavior of two related physical process Y=Y(X) and Z=Z(X).
+
+- 2.1
+
+The plot shows together Z vs X and Y vs X:
+
+```{r, echo=FALSE}
+physical <- read.csv2("physical.csv", sep = "," ,header = TRUE, stringsAsFactors = FALSE)
+
+#2.1
+physical$X <- as.numeric(physical$X)
+physical$Y <- as.numeric(physical$Y)
+physical$Z <- as.numeric(physical$Z)
+
+plot(physical$X, physical$Y, type = "l", ylim = c(0, 35), xlab = "X", ylab="")
+lines(physical$X, physical$Z, col="red")
+legend("topright", c("Y vs X", "Z vs X"),
+       lty=c(1,1), lwd = c(2.5, 2.5), col = c("black", "red"))
+```
+
+It seems that the two process are related, the Z process seems to be just translated to the right. Moreover, it can be seen that the highest values for both the process we have for X between 0 and 2, then the two process decrease in values but they continue to be quite random.
+
+- 2.2
+
+It can be seen that Z has some missing values, so we use the EM algorithm to estimate $\lambda$.
+
+We compute the likelihood for $Y_i \sim Exp(\frac{X_i}{\lambda})$ and $Z_i \sim Exp(\frac{X_i}{2\lambda})$:
+
+$L(Y|\lambda) = \frac{\prod x_i}{\lambda^n} exp(- \frac{\sum_i Y_i x_i}{\lambda})$
+
+$L(Z|\lambda) = \frac{\prod x_i}{2^n\lambda^n} exp(- \frac{\sum_i Z_i x_i}{2\lambda}) = \frac{\prod x_i}{2^n\lambda^n}exp(- \frac{\sum_O Z_i x_i}{2\lambda}-\frac{\sum_M Z_i x_i}{2\lambda})$
+
+where O is for the observed values of Z and M for the missing values.
+
+Then, we compute the product and take the logaritm to get:
+
+$l(Y, Z|\lambda) =log \frac{(\prod x_i)^2}{2^n\lambda^{2n}} - \frac{\sum_i Y_i x_i}{\lambda}- \frac{\sum_O Z_i x_i}{2\lambda}-\frac{\sum_M Z_i x_i}{2\lambda}$
+
+At this point the E-step can be done:
+
+$E(l(Y, Z|\lambda)) =log \frac{(\prod x_i)^2}{2^n\lambda^{2n}}- \frac{\sum_i Y_i x_i}{\lambda}- \frac{\sum_O Z_i x_i}{2\lambda}-\frac{|M|\lambda_t}{\lambda}$
+
+For the M-step, we have to compute the derivate with respect to $\lambda$ and put it equal to zero. 
+
+Doing this we get:
+
+$\lambda^{t+1}=\frac{\sum_i Y_i x_i}{2n}+\frac{\sum_O Z_i x_i}{4n}+\frac{|M|\lambda_t}{2n}$
+
+
+- 2.3 
+
+We implement the algorithm in R using a starting $\lambda$ value of 100 and converge criterion: stop if the change in $\lambda$ is less than 0.001.
+
+The optimal value and the number of iterations are:
+
+```{r, echo=FALSE}
+em <- function(Y, Z, X){ 
+Zobs <- Z[!is.na(Z)]
+Zmiss <- Z[is.na(Z)]
+Xobs <- which(!is.na(Z))
+n <- length(Z)
+r <- length(Zmiss)
+# Initial value
+lambda <- 100
+i <- 1
+
+repeat{
+  # E- step
+  EY <- sum(Y*X) / 2
+  EZo <- sum(Zobs*X[Xobs]) / 4
+  EZm <- (r * lambda) / 2
+  # M - step
+  lambda1 <- (EY + EZm + EZo) / n
+  # Stop if converged
+  if ( abs(lambda1 - lambda) < 0.001) break
+  lambda <- lambda1
+  i <- i + 1
+}
+res <- data.frame(Iterations = i, Lambda = lambda)
+return(res)
+}
+
+em_exp <- em(physical$Y, physical$Z, physical$X)
+
+em_exp
+```
+
+- 2.4 
+
+Using the optimal value of $\lambda$ found in the previous step, we compute the mean for Y and Z and we plot it against X in the same plot as step 2.1.
+
+```{r, echo=FALSE}
+plot(physical$X, physical$Y, type = "l", ylim = c(0, 35), xlab = "X", ylab ="")
+lines(physical$X, physical$Z, col="red")
+lines(physical$X, em_exp$Lambda/physical$X, col="blue")
+lines(physical$X, (2*em_exp$Lambda)/physical$X, col="green")
+legend("topright", c("Y vs X", "Z vs X", "EY vs X", "EZ vs X"),
+       lty=c(1,1), lwd = c(2.5, 2.5), col = c("black", "red", "blue", "green"))
+```
+
+The computed $\lambda$ seems to be reasonable.
+
+##Code
+```{r, eval=FALSE}
+
+```
+

@@ -52,7 +52,7 @@ DEnumbers <- function(x){
   return(res)
 }
 DEoutput <- DEnumbers(unifinput)
-hist(DEoutput,main="Histogram of inverse CDF method DE(0,1) numbers",xlim=c(-7,7),xlab = "numbers" )
+hist(DEoutput,main="Histogram of inverse CDF method DE(0,1) numbers",xlim=c(-7,7),xlab = "numbers",breaks= 100 )
 doubleexp <- function(x){
   return(1/2 * exp(-abs(x)))
 }
@@ -80,7 +80,8 @@ repeat{
   j <- j + 1
 }
 paste("Theoretical Rejection rate:",round(1 - 1/c,3))
-paste("Actual Rejection rate:",(j - 2000) / 2000)
-hist(acceptednumbers,main="Histogram of accept-reject method N(0,1) numbers")
-hist(sample(norminput,2000),main="Histogram of rnorm() N(0,1) numbers",xlab="rnormnumbers")
+paste("Actual Rejection rate:",round((j - 2000) / j,3))
+hist(acceptednumbers,main="Histogram of accept-reject method N(0,1) numbers",
+     breaks = 50)
+hist(sample(norminput,2000),main="Histogram of rnorm() N(0,1) numbers",xlab="rnormnumbers",breaks = 50)
 ## NA

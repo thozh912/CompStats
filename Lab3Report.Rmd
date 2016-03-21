@@ -60,7 +60,7 @@ hist(data[,2],breaks=100,main="Histogram of Swedish city populations, all cities
      xlab="Population",ylab = "No. of cities")
 ```
 
-We see that the histograms have almost the same shape in both cases. Thus, the sizes of the cities/municipalities chosen by the sampler are representative of the sizes of swedish cities.
+We see that the histograms have almost the same shape in both cases. In no way, however, are the cities/counties chosen by the sampler representative of the sizes of all swedish cities. In fact, since the probability of being chosen is proportional to population, larger cities should be overrepresented and vice versa for smaller cities. 
 
 ##Assigment 2
 
@@ -113,16 +113,16 @@ DEnumbers <- function(x){
   return(res)
 }
 DEoutput <- DEnumbers(unifinput)
-hist(DEoutput,main="Histogram of inverse CDF method DE(0,1) numbers",xlim=c(-7,7),xlab = "numbers" )
+hist(DEoutput,main="Histogram of inverse CDF method DE(0,1) numbers",xlim=c(-7,7),xlab = "numbers",breaks= 100 )
 ```
 
-We see that the shape of the histogram is suggestive of the double exponential function, so this is as expected.
+We see that the shape of the histogram is suggestive of the double exponential function, so this is as expected.( In particular, note the second derivative of the slope coming from the left is positive all the way up. A normal density function tend to have an inflection point half-way up the slope and then the second derivative turns negative.)
 
 Next, we are to originate standard normal distributed numbers from double exponentially distributed numbers using the Acceptance/Rejection method. This method involves evaluating the truth value of the statement
 $$ U \leq \frac{f_{X}\left(x\right)}{c g_{X}\left(x\right)}$$
 where $U$ is a observation of a uniformly distributed U(0,1) variable, $f_{X}\left(x\right)$ is the target density from which we wish our numbers to originate from, and $g_{X}\left(x\right)$ is a majorizing density from which all candidate numbers are actually generated from. The constant $c$ is a constant chosen such that $c g_{X}\left(x\right) > f_{X}\left(x\right)$ for all possible $x$. The gist of the method is that we only accept those numbers $x$ for which the statement above is true. Then the accepted numbers will have density distribution $f_{X}\left(x\right)$.
 
-In order to find constant $c$, we plotted the two density functions and found $c$ as the maximum ratio between the standard normal function and the standard double exponential function. We found that $c \approx 1.32$.
+In order to find constant $c$, we plotted the two density functions and found $c$ as the maximum ratio between the standard normal function and the standard double exponential function. We found that $c \approx 1.315$.
 
 ```{r,echo=FALSE}
 doubleexp <- function(x){
@@ -157,12 +157,13 @@ repeat{
   j <- j + 1
 }
 paste("Theoretical Rejection rate:",round(1 - 1/c,3))
-paste("Actual Rejection rate:",(j - 2000) / 2000)
-hist(acceptednumbers,main="Histogram of accept-reject method N(0,1) numbers")
-hist(sample(norminput,2000),main="Histogram of rnorm() N(0,1) numbers",xlab="rnormnumbers")
+paste("Actual Rejection rate:",round((j - 2000) / j,3))
+hist(acceptednumbers,main="Histogram of accept-reject method N(0,1) numbers",
+     breaks = 50)
+hist(sample(norminput,2000),main="Histogram of rnorm() N(0,1) numbers",xlab="rnormnumbers",breaks = 50)
 ```
 
-We see that the two histograms are reminiscent of the normal density function, which is good. We also find that the actual rejection rate is higher than the theoretical rejection rate.
+We see that the two histograms are reminiscent of the normal density function, which is good. We also find that the actual rejection rate is close to the theoretical rejection rate.
 
 ##Appendix
 
