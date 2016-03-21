@@ -26,7 +26,8 @@ resvec <- c()
 for(i in 1:length(lambvec)){
   resvec <- c(resvec,myMSE(lambvec[i],pars))
 }
-plot(lambvec,resvec,main="fitted model MSE vs lambda",xlab ="lambda",ylab = "MSE")
+plot(lambvec,resvec,main="fitted model MSE vs lambda",
+     type="l",xlab ="lambda",ylab = "MSE",xlim=c(5,15),ylim= c(0.12,0.15))
 paste("minimum MSE is:",round(resvec[which.min(resvec)],3))
 paste("Corresponding optimal value of lambda is:",round(lambvec[which.min(resvec)],3))
 op1<-optimize(myMSE,c(0.1,40),pars=pars, tol= 0.01) # 18 iterations required

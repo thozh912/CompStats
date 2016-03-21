@@ -81,7 +81,7 @@ repeat{
   j <- j + 1
 }
 paste("Theoretical Rejection rate:",round(1 - 1/c,3))
-paste("Actual Rejection rate:",(j - 2000) / 2000)
+paste("Actual Rejection rate:",(j - 2000) / j)
 hist(acceptednumbers,main="Histogram of accept-reject method N(0,1) numbers")
 hist(sample(norminput,2000),main="Histogram of rnorm() N(0,1) numbers",xlab="rnormnumbers")
 
